@@ -1,58 +1,54 @@
 version: '3.9'
 
 services:
-  postgres:
-    image: postgres:13
-    container_name: ajay_postgres
+  backend:
+    container_name: backend_container1
+    build:
+      context: ./Backend
     ports:
-      - "3808:5432"
+      - "3423:3423"
+    env_file:
+      - ./Backend/server.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  postgres:
+    container_name: postgres_container1
+    image: postgres:13
     environment:
-      POSTGRES_DB: new_employee_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin234
+      POSTGRES_DB: new_employee_db
+    ports:
+      - "5423:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - ajay_network
-
-  backend:
-    build: ./Backend
-    container_name: ajay_backend
-    ports:
-      - "3060:3060"
-    depends_on:
-      - postgres
-    environment:
-      DB_USER: postgres
-      DB_HOST: postgres
-      DB_NAME: new_employee_db
-      DB_PASSWORD: admin234
-      DB_PORT: 5432
-      HOST: 0.0.0.0
-      PORT: 3060
-    networks:
-      - ajay_network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   frontend:
-    build: ./Frontend
-    container_name: ajay_frontend
+    container_name: frontend_container1
+    build:
+      context: ./Frontend
     ports:
-      - "8053:80"
-    networks:
-      - ajay_network
+      - "8045:80"
+    restart: always
 
   hr_page:
-    build: ./HR_Page
-    container_name: ajay_hr_page
+    container_name: hrpage_container1
+    build:
+      context: ./HR_Page
     ports:
-      - "8054:80"
-    networks:
-      - ajay_network
+      - "8046:80"
+    restart: always
 
 volumes:
   pgdata:
-
-networks:
-  ajay_network:
 
